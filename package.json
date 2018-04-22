@@ -7,7 +7,7 @@
     "compile": "tsc",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "lint": "tslint --project .",
-    "dev": "npm run clean && npm run compile && DEBUG=predictor:* node --max-old-space-size=4096 --max-new-space-size=4096 dist/src/app.js",
+    "dev": "npm run clean && npm run compile && DEBUG=predictor:* node --max-old-space-size=4096 dist/src/app.js",
     "clean": "rm -rf log && mkdir log"
   },
   "author": "TalkWithKeyboard",

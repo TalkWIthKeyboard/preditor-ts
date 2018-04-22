@@ -8,6 +8,8 @@ import Parser from '../models/parser'
 import { UserInfo, NoUserInfo } from '../interface'
 import * as debug from './debugService'
 
+const REDIS_SET_KEY = 'predictor:repetition:set'
+
 const mysqlDBSchema = {
   t12306: ['password', 'email', 'name', 'CtfID', 'mobile', 'username'],
   '7k7k': ['password', 'username'],
@@ -24,31 +26,29 @@ const sqlCases = {
               'ORDER BY id LIMIT 10000',
 }
 
-let repetitionSet = new Set()
-
-function _dataPaser(
+async function _dataPaser(
   sqlResultList, 
   table: string,
 ) {
   let rubbishCount = 0
   let repetitionCount = 0
   return {
-    mongoData: _.compact(_.map(sqlResultList, rowData => {
+    mongoData: _.compact(await Promise.mapSeries(sqlResultList, async rowData => {
       // 做非法检查
       if (
-        !Parser.passwordCheck(rowData.password) 
-        || rowData.password.length < 3 
-        || rowData.password.length > 30
+        !Parser.passwordCheck((<any>rowData).password)
+        || (<any>rowData).password.length < 3 
+        || (<any>rowData).password.length > 30
       ) {
-        if (repetitionSet.has(_.values(rowData).join(','))) {
+        if (await redisClient.sismember(REDIS_SET_KEY, _.values(rowData).join(','))) {
           repetitionCount += 1
         } else {
-          repetitionSet.add(_.values(rowData).join(','))
+          await redisClient.sadd(REDIS_SET_KEY, _.values(rowData).join(','))
           rubbishCount += 1
         }
         return null
       }
-      repetitionSet.add(_.values(rowData).join(','))
+      await redisClient.sadd(REDIS_SET_KEY, _.values(rowData).join(','))
       // 合法数据的构造工厂
       switch (table) {
         case 't12306':
@@ -114,13 +114,13 @@ export default async function clean(names: string[], model) {
       let reduceNumber = 0
       let rubbishTotal = 0
       let repetitionTotal = 0
-      repetitionSet = new Set()      
+      await redisClient.del(REDIS_SET_KEY)    
       await Promise.mapSeries(
         // 尝试过并发数20，会在400w左右次请求的时候挂掉，这里不宜过高
         _.chunk(sqlList, 5), sqls => {
           return Promise.map(sqls, async sql => {
             const rowData = await query(sql)
-            const result = _dataPaser(rowData, table)
+            const result = await _dataPaser(rowData, table)
             await model.insertMany(result.mongoData)
             reduceNumber += result.mongoData.length
             rubbishTotal += result.rubbishCount
