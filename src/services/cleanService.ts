@@ -115,7 +115,7 @@ export default async function clean(names: string[], model) {
       let rubbishTotal = 0
       let repetitionTotal = 0
       repetitionSet = new Set()      
-      const sqlResultList = _.flattenDeep(await Promise.mapSeries(
+      await Promise.mapSeries(
         // 尝试过并发数20，会在400w左右次请求的时候挂掉，这里不宜过高
         _.chunk(sqlList, 5), sqls => {
           return Promise.map(sqls, async sql => {
@@ -127,7 +127,7 @@ export default async function clean(names: string[], model) {
             repetitionTotal += result.repetitionCount
             debug.info(`${table} finish ${reduceNumber}/${count} mongo save, repetition: ${result.repetitionCount}, rubbish: ${result.rubbishCount}`)
           })
-        }))
+        })
       // 4. 保存统计数据
       await models.Statistic.insertMany([
         { source: table, type: 'rubbish', count: rubbishTotal },

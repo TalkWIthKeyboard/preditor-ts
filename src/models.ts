@@ -17,6 +17,8 @@ const schemas = {
     name: { type: String, default: '' },
     birthday: { type: String, default: '' },
     mobile: { type: String, default: '' },
+    namePinyin: [String],
+    nameFirstLetter: { type: String, default: '' }
   }, {collection: 'UserInfoPassword'}),
 
   Statistic: new Schema({

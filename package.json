@@ -7,7 +7,7 @@
     "compile": "tsc",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "lint": "tslint --project .",
-    "dev": "npm run clean && npm run compile && DEBUG=predictor:* node dist/src/app.js",
+    "dev": "npm run clean && npm run compile && DEBUG=predictor:* node --max-old-space-size=4096 --max-new-space-size=4096 dist/src/app.js",
     "clean": "rm -rf log && mkdir log"
   },
   "author": "TalkWithKeyboard",
@@ -19,7 +19,8 @@
     "lodash": "^4.17.5",
     "moment": "^2.22.1",
     "mongoose": "^5.0.12",
-    "mysql": "^2.15.0"
+    "mysql": "^2.15.0",
+    "pinyin": "^2.8.3"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.20",
@@ -28,6 +29,7 @@
     "@types/mongoose": "^5.0.7",
     "@types/mysql": "^2.15.4",
     "@types/node": "^9.6.1",
+    "@types/pinyin": "^2.8.0",
     "tslint": "^5.9.1",
     "tslint-xo": "^0.7.0",
     "typescript": "^2.8.1"

@@ -1,4 +1,6 @@
 import { UserInfo, NoUserInfo } from '../interface'
+import * as pinyin from 'pinyin'
+import * as _ from 'lodash'
 
 export default class Parser {
   static mailCheck(mail: string) {
@@ -26,7 +28,13 @@ export default class Parser {
     result.email = this.mailCheck(queryData.email) ? queryData.email : null
     // 名字（取除掉特殊符号，保留空格）
     // 可能出现 少量英文名，少量中英混合
-    result.name = queryData.username.replace(/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g, '')
+    result.name = queryData.name.replace(/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g, '')
+    // 提取出中文部分来转换成pinyin
+    const chineseName: string[] = _.compact(queryData.name.match(/([\u4e00-\u9fa5]*)/g))
+    if (chineseName) {
+      result.namePinyin = _.flatten(pinyin(chineseName[0], { style: pinyin.STYLE_NORMAL }))
+      result.nameFirstLetter = _.flatten(pinyin(chineseName[0], { style: pinyin.STYLE_FIRST_LETTER })).join('')
+    }
     // 生日（通过身份证信息生成）
     if (cfid) {
       result.birthday = cfid.length === 18 ? cfid.slice(6, 14) : `19${cfid.slice(6, 12)}`
@@ -52,7 +60,7 @@ export default class Parser {
   static duduniu(queryData): UserInfo {
     const result: any = {}
     result.password = queryData.password
-    result.name = queryData.username
+    result.name = queryData.username    
     const email = queryData.email.replace(/["[]]/g, '')
     result.email = this.mailCheck(email) ? email : null
     return result
